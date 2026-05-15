@@ -18,22 +18,28 @@ colores = {
 # ---------------------- ARCHIVO DE GUARDADO DE DATOS ----------------------
 ARCHIVO_DATOS = "datos_estudio.json"
 
-# Datos iniciales por si es la primera vez
+# Datos iniciales completos con TODO
 datos_iniciales = {
     "servicios": [
         {"nombre": "Sesión Fotográfica Básica", "puntos": 10, "activo": True, "es_navidad": False},
         {"nombre": "Video de Evento", "puntos": 20, "activo": True, "es_navidad": False},
-        {"nombre": "Fotografías Navideñas", "puntos": 15, "activo": True, "es_navidad": True}
+        {"nombre": "Fotografías Navideñas", "puntos": 15, "activo": True, "es_navidad": True},
+        {"nombre": "Sesión Exterior", "puntos": 25, "activo": True, "es_navidad": False},
+        {"nombre": "Álbum Digital Completo", "puntos": 30, "activo": True, "es_navidad": False}
     ],
     "clientes": {
         "Juan Pérez": {"puntos": 50, "activo": True},
-        "María Gómez": {"puntos": 35, "activo": True}
+        "María Gómez": {"puntos": 35, "activo": True},
+        "Carlos Ruiz": {"puntos": 70, "activo": True},
+        "Ana Mora": {"puntos": 20, "activo": True}
     },
     "ventas": [],
     "reglas_canjes": [
         (20, "Sesión de fotos pequeña gratis"),
         (40, "Impresión de 5 fotos tamaño carta"),
-        (60, "Sesión fotográfica completa")
+        (60, "Sesión fotográfica completa"),
+        (80, "Video corto promocional"),
+        (100, "Álbum impreso de lujo")
     ],
     "usuarios": {
         "Dimerson": {"clave": "admin123", "rol": "administrador"},
@@ -41,7 +47,7 @@ datos_iniciales = {
     }
 }
 
-# ---------------------- FUNCIONES PARA GUARDAR Y CARGAR DATOS ----------------------
+# ---------------------- FUNCIONES ----------------------
 def cargar_datos():
     try:
         with open(ARCHIVO_DATOS, "r", encoding="utf-8") as f:
@@ -53,21 +59,18 @@ def guardar_datos(datos):
     with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
         json.dump(datos, f, indent=4, ensure_ascii=False)
 
-# Cargamos los datos
 datos = cargar_datos()
 
-# ---------------------- SISTEMA DE INICIO DE SESIÓN Y SEGURIDAD ----------------------
+# ---------------------- INICIO DE SESIÓN ----------------------
 if "sesion_iniciada" not in st.session_state:
     st.session_state.sesion_iniciada = False
     st.session_state.usuario_actual = ""
     st.session_state.rol_actual = ""
 
-# Si no ha iniciado sesión, mostramos la pantalla de login
 if not st.session_state.sesion_iniciada:
     st.markdown("""
     <div style="text-align:center; padding:30px; background-color: #f8f9fa; border-radius:10px; margin: 20px;">
-        <img src="https://i.imgur.com/7Z8X8yY.png" width="200" style="margin-bottom:20px;">
-        <h1>🔒 INICIO DE SESIÓN</h1>
+        <h1>📸 INICIO DE SESIÓN</h1>
         <p style="color:#666;">Sistema de Gestión - Imagen Digital Studio</p>
     </div>
     """, unsafe_allow_html=True)
@@ -84,110 +87,74 @@ if not st.session_state.sesion_iniciada:
         else:
             st.error("❌ Usuario o contraseña incorrectos")
    
-    # Detenemos el código aquí hasta que inicie sesión
     st.stop()
 
-# ---------------------- CABECERA CON LOGO E INFORMACIÓN DE CONTACTO ----------------------
+# ---------------------- CABECERA (SIN ENLACES ROTOS) ----------------------
 st.markdown("""
 <div style="text-align:center; margin-bottom:20px; padding:15px; background-color: #ffffff; border-radius:8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <img src="https://i.imgur.com/7Z8X8yY.png" width="100" style="margin-bottom:10px;">
     <h1 style="margin:5px 0; color:#333;">IMAGEN DIGITAL STUDIO</h1>
     <p style="color:#666; font-size:15px;">Fotografía & Video | Calidad y profesionalismo</p>
-   
-    <!-- INFORMACIÓN DE CONTACTO COMPLETA -->
     <div style="margin-top:15px; padding:10px; background-color:#f8f9fa; border-radius:5px;">
-        <p style="margin:5px 0; font-size:14px; color:#444;">
-            📍 <strong>Dirección:</strong> Limón Centro, diagonal a la MUCAP
-        </p>
-        <p style="margin:5px 0; font-size:14px; color:#444;">
-            📞 <strong>Teléfono:</strong> 2695-1234
-        </p>
-        <p style="margin:5px 0; font-size:14px; color:#444;">
-            💬 <strong>WhatsApp:</strong> 8888-7777
-        </p>
-        <p style="margin:5px 0; font-size:14px; color:#444;">
-            📧 <strong>Correo:</strong> informacion@imagenstudiocr.com
-        </p>
+        <p>📍 <strong>Dirección:</strong> Limón Centro, diagonal a la MUCAP</p>
+        <p>📞 <strong>Teléfono:</strong> 2695-1234</p>
+        <p>💬 <strong>WhatsApp:</strong> 8888-7777</p>
+        <p>📧 <strong>Correo:</strong> informacion@imagenstudiocr.com</p>
     </div>
-    <hr style="border: 1px solid #eee; margin-top:15px;">
+    <hr>
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------------- MENÚ PRINCIPAL ----------------------
+# ---------------------- MENÚ ----------------------
 opcion = st.sidebar.selectbox(
     "📋 MENÚ PRINCIPAL",
     ["Servicios", "Clientes", "Ventas", "Canjes de Puntos"] + (["Administración"] if st.session_state.rol_actual == "administrador" else [])
 )
 
-# Botón para cerrar sesión
 if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
-    st.session_state.sesion_iniciada = False
-    st.rerun()
-# ---------------------- PANTALLA DE SERVICIOS ----------------------
+    # ---------------------- PANTALLA SERVICIOS ----------------------
 if opcion == "Servicios":
     st.markdown(f"""
         <div style="background-color:{colores['Servicios']}; padding:12px; border-radius:5px; margin-bottom:20px;">
-            <h1 style="color:white; margin:0; font-size:22px; text-align:center;">🛠️ GESTIÓN DE SERVICIOS</h1>
+            <h1 style="color:white; margin:0; font-size:22px; text-align:center;">🛠️ NUESTROS SERVICIOS</h1>
         </div>
     """, unsafe_allow_html=True)
 
-    # Solo el administrador puede agregar, modificar o eliminar
+    # Solo Admin puede agregar
     if st.session_state.rol_actual == "administrador":
         with st.expander("➕ Agregar Nuevo Servicio"):
             nombre_serv = st.text_input("Nombre del Servicio")
-            puntos_serv = st.number_input("Valor en Puntos", min_value=1, step=1)
-            es_navidad = st.checkbox("¿Es Fotografía Navideña?")
-           
-            if st.button("Guardar Servicio"):
-                if nombre_serv.strip() != "":
-                    datos["servicios"].append({
-                        "nombre": nombre_serv,
-                        "puntos": puntos_serv,
-                        "activo": True,
-                        "es_navidad": es_navidad
-                    })
+            puntos_serv = st.number_input("Valor en Puntos", min_value=1)
+            es_navidad = st.checkbox("¿Es Navideño?")
+            if st.button("Guardar"):
+                if nombre_serv:
+                    datos["servicios"].append({"nombre": nombre_serv, "puntos": puntos_serv, "activo": True, "es_navidad": es_navidad})
                     guardar_datos(datos)
-                    st.success("✅ Servicio guardado correctamente")
+                    st.success("✅ Guardado")
                     st.rerun()
-                else:
-                    st.warning("⚠️ Escribe un nombre para el servicio")
 
-    # Mostrar lista de servicios
-    st.subheader("📋 Lista de Servicios")
-    df_servicios = pd.DataFrame(datos["servicios"])
-    df_servicios = df_servicios.rename(columns={
-        "nombre": "Nombre del Servicio",
-        "puntos": "Puntos",
-        "activo": "¿Activo?",
-        "es_navidad": "🎄 Navideño"
-    })
-    st.dataframe(df_servicios, use_container_width=True, hide_index=True, height=350)
+    # Lista completa
+    st.subheader("📋 Lista Completa")
+    df_serv = pd.DataFrame(datos["servicios"])
+    df_serv = df_serv.rename(columns={"nombre":"Servicio", "puntos":"Puntos", "activo":"Activo", "es_navidad":"Navidad"})
+    st.dataframe(df_serv, use_container_width=True)
 
-    # Acciones: Activar/Desactivar o Eliminar
+    # Acciones Admin
     if st.session_state.rol_actual == "administrador":
         st.subheader("⚙️ Acciones")
-        if len(datos["servicios"]) > 0:
-            nombres_servicios = [s["nombre"] for s in datos["servicios"]]
-            seleccion_servicio = st.selectbox("Seleccionar Servicio", nombres_servicios)
-            accion = st.radio("Selecciona qué hacer", ["Activar / Desactivar", "Eliminar Servicio"])
-           
-            if st.button("Ejecutar Acción"):
-                for servicio in datos["servicios"]:
-                    if servicio["nombre"] == seleccion_servicio:
-                        if accion == "Activar / Desactivar":
-                            servicio["activo"] = not servicio["activo"]
-                            estado = "ACTIVADO" if servicio["activo"] else "DESACTIVADO"
-                            st.success(f"✅ Servicio {estado} correctamente")
+        if datos["servicios"]:
+            sel_serv = st.selectbox("Seleccionar", [s["nombre"] for s in datos["servicios"]])
+            accion = st.radio("Opción", ["Activar/Desactivar", "Eliminar"])
+            if st.button("Ejecutar"):
+                for s in datos["servicios"]:
+                    if s["nombre"] == sel_serv:
+                        if accion == "Activar/Desactivar":
+                            s["activo"] = not s["activo"]
                         else:
-                            datos["servicios"].remove(servicio)
-                            st.success("🗑️ Servicio eliminado")
-                       
+                            datos["servicios"].remove(s)
                         guardar_datos(datos)
                         st.rerun()
-        else:
-            st.info("No hay servicios registrados aún")
 
-# ---------------------- PANTALLA DE CLIENTES ----------------------
+# ---------------------- PANTALLA CLIENTES ----------------------
 elif opcion == "Clientes":
     st.markdown(f"""
         <div style="background-color:{colores['Clientes']}; padding:12px; border-radius:5px; margin-bottom:20px;">
@@ -195,106 +162,81 @@ elif opcion == "Clientes":
         </div>
     """, unsafe_allow_html=True)
 
-    # Crear nuevo cliente
+    # Crear cliente (solo Admin)
     if st.session_state.rol_actual == "administrador":
-        with st.expander("➕ Crear Nuevo Cliente"):
-            nombre_cliente = st.text_input("Nombre Completo")
-            puntos_iniciales = st.number_input("Puntos Iniciales", min_value=0, step=1)
-           
+        with st.expander("➕ Nuevo Cliente"):
+            nombre_cli = st.text_input("Nombre Completo")
+            puntos_cli = st.number_input("Puntos Iniciales", min_value=0)
             if st.button("Guardar Cliente"):
-                if nombre_cliente.strip() != "" and nombre_cliente not in datos["clientes"]:
-                    datos["clientes"][nombre_cliente] = {"puntos": puntos_iniciales, "activo": True}
+                if nombre_cli and nombre_cli not in datos["clientes"]:
+                    datos["clientes"][nombre_cli] = {"puntos": puntos_cli, "activo": True}
                     guardar_datos(datos)
-                    st.success("✅ Cliente creado correctamente")
+                    st.success("✅ Cliente creado")
                     st.rerun()
-                else:
-                    st.warning("⚠️ El nombre está vacío o el cliente ya existe")
 
-    # Mostrar lista de clientes
+    # Lista completa
     st.subheader("📋 Lista de Clientes")
-    lista_clientes = []
-    for nombre, info in datos["clientes"].items():
-        lista_clientes.append({
-            "Cliente": nombre,
-            "Puntos Acumulados": info["puntos"],
-            "Estado": "ACTIVO" if info["activo"] else "INACTIVO"
-        })
-   
-    df_clientes = pd.DataFrame(lista_clientes)
-    st.dataframe(df_clientes, use_container_width=True, hide_index=True, height=400)
+    lista_cli = []
+    for nom, info in datos["clientes"].items():
+        lista_cli.append({"Nombre": nom, "Puntos": info["puntos"], "Estado": "ACTIVO" if info["activo"] else "INACTIVO"})
+    st.dataframe(pd.DataFrame(lista_cli), use_container_width=True)
 
-    # Activar o desactivar clientes
+    # Cambiar estado (solo Admin)
     if st.session_state.rol_actual == "administrador":
-        st.subheader("🔄 Cambiar Estado de Cliente")
-        if len(datos["clientes"]) > 0:
-            cliente_seleccionado = st.selectbox("Seleccionar Cliente", list(datos["clientes"].keys()))
-           
-            if st.button("Cambiar Estado"):
-                datos["clientes"][cliente_seleccionado]["activo"] = not datos["clientes"][cliente_seleccionado]["activo"]
+        st.subheader("🔄 Cambiar Estado")
+        if datos["clientes"]:
+            sel_cli = st.selectbox("Cliente", list(datos["clientes"].keys()))
+            if st.button("Cambiar"):
+                datos["clientes"][sel_cli]["activo"] = not datos["clientes"][sel_cli]["activo"]
                 guardar_datos(datos)
-                st.success("✅ Estado actualizado correctamente")
                 st.rerun()
-# ---------------------- PANTALLA DE VENTAS ----------------------
+                # ---------------------- PANTALLA VENTAS ----------------------
 elif opcion == "Ventas":
     st.markdown(f"""
         <div style="background-color:{colores['Ventas']}; padding:12px; border-radius:5px; margin-bottom:20px;">
-            <h1 style="color:white; margin:0; font-size:22px; text-align:center;">💳 HISTORIAL DE VENTAS - {datetime.now().strftime('%B %Y').upper()}</h1>
+            <h1 style="color:white; margin:0; font-size:22px; text-align:center;">💳 HISTORIAL DE VENTAS</h1>
         </div>
     """, unsafe_allow_html=True)
 
-    # Registrar nueva venta
+    # Registrar Venta (solo Admin)
     if st.session_state.rol_actual == "administrador":
         with st.expander("➕ Registrar Nueva Venta"):
-            lista_clientes_activos = [c for c, info in datos["clientes"].items() if info["activo"]]
-            cliente_venta = st.selectbox("Cliente", lista_clientes_activos)
-            lista_servicios_activos = [s["nombre"] for s in datos["servicios"] if s["activo"]]
-            servicio_venta = st.selectbox("Servicio Realizado", lista_servicios_activos)
-            monto_venta = st.number_input("Monto (₡)", min_value=0.0, step=100.0)
+            activos = [c for c, v in datos["clientes"].items() if v["activo"]]
+            cliente_v = st.selectbox("Cliente", activos)
+            serv_activos = [s["nombre"] for s in datos["servicios"] if s["activo"]]
+            serv_v = st.selectbox("Servicio", serv_activos)
+            monto_v = st.number_input("Monto ₡", min_value=0.0)
            
             if st.button("Guardar Venta"):
-                # Agregamos la venta al historial
+                # Guardar venta
                 datos["ventas"].append([
-                    cliente_venta,
-                    servicio_venta,
-                    datetime.now().strftime("%d/%m/%Y %H:%M"),
-                    f"¢ {monto_venta:,.2f}"
+                    cliente_v, serv_v, datetime.now().strftime("%d/%m/%Y %H:%M"), f"¢ {monto_v:,.2f}"
                 ])
-                # Sumamos los puntos al cliente
-                puntos_ganados = next((s["puntos"] for s in datos["servicios"] if s["nombre"] == servicio_venta), 0)
-                datos["clientes"][cliente_venta]["puntos"] += puntos_ganados
+                # Sumar puntos
+                puntos_ganar = next((s["puntos"] for s in datos["servicios"] if s["nombre"] == serv_v), 0)
+                datos["clientes"][cliente_v]["puntos"] += puntos_ganar
                 guardar_datos(datos)
-                st.success(f"✅ Venta registrada. Se sumaron {puntos_ganados} puntos a {cliente_venta}")
+                st.success(f"✅ Venta registrada. +{puntos_ganar} puntos")
                 st.rerun()
 
-    # Mostrar tabla de ventas
-    if len(datos["ventas"]) > 0:
-        df_ventas = pd.DataFrame(
-            datos["ventas"],
-            columns=["Cliente", "Descripción del Servicio", "Fecha", "Monto"]
-        )
-        st.dataframe(df_ventas, use_container_width=True, hide_index=True, height=400)
+    # Ver ventas
+    if datos["ventas"]:
+        df_ventas = pd.DataFrame(datos["ventas"], columns=["Cliente", "Servicio", "Fecha", "Monto"])
+        st.dataframe(df_ventas, use_container_width=True)
+        total = sum(float(v[3].replace("¢ ","").replace(",","")) for v in datos["ventas"])
+        st.info(f"**TOTAL DEL MES: ₡ {total:,.2f}**")
 
-        # Calcular total del mes
-        total_mes = sum([float(v[3].replace("¢ ","").replace(",","")) for v in datos["ventas"]])
-        st.markdown(f"""
-            <div style="text-align:center; font-size:18px; font-weight:bold; color:#27ae60; margin-top:15px;">
-                📊 TOTAL DEL MES: ¢ {total_mes:,.2f}
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Opción para anular venta
+        # Anular venta (solo Admin)
         if st.session_state.rol_actual == "administrador":
-            st.subheader("❌ Anular Venta")
-            numero_fila = st.number_input("Número de fila a anular (empieza en 0)", min_value=0, max_value=len(datos["ventas"])-1, step=1)
-           
-            if st.button("Anular esta venta"):
-                datos["ventas"].pop(numero_fila)
+            fila = st.number_input("Número de fila a borrar", min_value=0, max_value=len(datos["ventas"])-1)
+            if st.button("Anular"):
+                datos["ventas"].pop(fila)
                 guardar_datos(datos)
-                st.success("✅ Venta anulada y eliminada del historial")
                 st.rerun()
     else:
-        st.info("No hay ventas registradas aún")
-# ---------------------- PANTALLA DE CANJES DE PUNTOS ----------------------
+        st.info("Sin ventas registradas")
+
+# ---------------------- PANTALLA CANJES ----------------------
 elif opcion == "Canjes de Puntos":
     st.markdown(f"""
         <div style="background-color:{colores['Canjes de Puntos']}; padding:12px; border-radius:5px; margin-bottom:20px;">
@@ -302,55 +244,100 @@ elif opcion == "Canjes de Puntos":
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div style="background-color:#e8f5e9; padding:20px; border-radius:5px; margin:10px 30px;">', unsafe_allow_html=True)
+    st.markdown('<div style="background:#e8f5e9; padding:20px; border-radius:8px;">', unsafe_allow_html=True)
 
-    # Consultar puntos
-    nombre_cliente = st.text_input("Nombre del Cliente:")
-    resultado_busqueda = st.empty()
-   
-    if st.button("🔍 Consultar Puntos"):
-        nombre_buscar = nombre_cliente.strip()
-        if nombre_buscar in datos["clientes"] and datos["clientes"][nombre_buscar]["activo"]:
-            puntos = datos["clientes"][nombre_buscar]["puntos"]
-            resultado_busqueda.success(f"✅ Tienes acumulados: {puntos} puntos")
+    # Consultar
+    nombre_canje = st.text_input("Nombre del Cliente")
+    if st.button("🔍 Consultar"):
+        if nombre_canje in datos["clientes"] and datos["clientes"][nombre_canje]["activo"]:
+            st.success(f"✅ Puntos: {datos['clientes'][nombre_canje]['puntos']}")
         else:
-            resultado_busqueda.warning("⚠️ Cliente no encontrado o está inactivo")
+            st.error("❌ Cliente no válido")
 
-    # Seleccionar premio
-    st.markdown("<br><b>Selecciona el premio a canjear:</b>", unsafe_allow_html=True)
-    premio_opciones = [f"{cantidad} puntos - {descripcion}" for cantidad, descripcion in datos["reglas_canjes"]]
-    premio_seleccionado_texto = st.radio("", premio_opciones, label_visibility="collapsed")
+    # Premios
+    st.subheader("Premios Disponibles")
+    premios = [f"🔸 {p} puntos: {d}" for p,d in datos["reglas_canjes"]]
+    st.write("\n".join(premios))
 
-    # Canjear puntos
-    if st.button("✅ Canjear Premio", type="primary"):
-        nombre = nombre_cliente.strip()
-        if not nombre or nombre not in datos["clientes"] or not datos["clientes"][nombre]["activo"]:
-            st.error("⚠️ Primero consulta un cliente válido y activo")
-        elif not premio_seleccionado_texto:
-            st.error("⚠️ Selecciona un premio para canjear")
+    # Seleccionar y Canjear
+    sel_premio = st.radio("Seleccione premio", premios) if premios else None
+    if st.button("✅ Realizar Canje"):
+        if not nombre_canje or nombre_canje not in datos["clientes"]:
+            st.error("Primero consulte el nombre")
+        elif not sel_premio:
+            st.error("Seleccione premio")
         else:
-            puntos_necesarios = int(premio_seleccionado_texto.split(" ")[0])
-            descripcion_premio = premio_seleccionado_texto.split(" - ", 1)[1]
-            puntos_actuales = datos["clientes"][nombre]["puntos"]
-
-            if puntos_actuales >= puntos_necesarios:
-                # Guardamos los cambios para que no se pierdan nunca
-                datos["clientes"][nombre]["puntos"] -= puntos_necesarios
+            puntos_neces = int(sel_premio.split()[0])
+            puntos_act = datos["clientes"][nombre_canje]["puntos"]
+            if puntos_act >= puntos_neces:
+                datos["clientes"][nombre_canje]["puntos"] -= puntos_neces
                 guardar_datos(datos)
-                st.success(f"""
-                    🎉 ¡Canje Exitoso!
-                    Felicidades {nombre}!
-                    Has canjeado por: {descripcion_premio}
-                    Se descontaron {puntos_necesarios} puntos.
-                    Te quedan: {datos["clientes"][nombre]["puntos"]} puntos.
-                    ✅ Los cambios quedaron guardados correctamente.
-                """)
+                st.success("🎉 ¡Canje exitoso! Puntos descontados.")
+                st.rerun()
             else:
-                st.error(f"""
-                    ❌ Puntos insuficientes
-                    Lo sentimos {nombre},
-                    Necesitas {puntos_necesarios} puntos para este premio.
-                    Actualmente tienes {puntos_actuales} puntos.
-                """)
+                st.error("❌ Puntos insuficientes")
 
     st.markdown('</div>', unsafe_allow_html=True)
+    st.session_state.sesion_iniciada = False
+    st.rerun()
+    # ---------------------- PANTALLA ADMINISTRACIÓN (SOLO APARECE SI ES ADMIN) ----------------------
+elif opcion == "Administración":
+    st.markdown(f"""
+        <div style="background-color:{colores['Administración']}; padding:12px; border-radius:5px; margin-bottom:20px;">
+            <h1 style="color:white; margin:0; font-size:22px; text-align:center;">⚙️ PANEL DE ADMINISTRACIÓN</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.warning("⚠️ **Solo para personal autorizado** - Aquí puedes modificar todo el sistema")
+
+    # Gestión de Usuarios
+    st.subheader("👤 Gestionar Usuarios")
+    df_usuarios = []
+    for u, info in datos["usuarios"].items():
+        df_usuarios.append({
+            "Usuario": u,
+            "Rol": info["rol"],
+            "Clave": "••••••••"
+        })
+    st.dataframe(pd.DataFrame(df_usuarios), use_container_width=True)
+
+    # Crear nuevo usuario
+    with st.expander("➕ Crear Nuevo Usuario"):
+        nuevo_user = st.text_input("Nombre de Usuario")
+        nueva_clave = st.text_input("Contraseña", type="password")
+        rol_nuevo = st.selectbox("Rol", ["administrador", "consulta"])
+        if st.button("Guardar Usuario"):
+            if nuevo_user and nuevo_user not in datos["usuarios"]:
+                datos["usuarios"][nuevo_user] = {"clave": nueva_clave, "rol": rol_nuevo}
+                guardar_datos(datos)
+                st.success("✅ Usuario creado")
+                st.rerun()
+
+    # Reglas de Canje
+    st.subheader("🎁 Modificar Reglas de Canje")
+    nueva_puntos = st.number_input("Puntos necesarios", min_value=10, step=10)
+    nueva_desc = st.text_input("Descripción del premio")
+    if st.button("Agregar Regla"):
+        if nueva_desc:
+            datos["reglas_canjes"].append((nueva_puntos, nueva_desc))
+            guardar_datos(datos)
+            st.success("✅ Regla agregada")
+            st.rerun()
+
+    # Resumen del sistema
+    st.subheader("📊 Resumen General")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Servicios", len(datos["servicios"]))
+    with col2:
+        st.metric("Total Clientes", len(datos["clientes"]))
+    with col3:
+        st.metric("Total Ventas", len(datos["ventas"]))
+
+    # Reiniciar sistema
+    if st.button("🔄 Reiniciar Datos a Original", type="secondary"):
+        if st.checkbox("Estoy seguro, borrar todo"):
+            datos = datos_iniciales
+            guardar_datos(datos)
+            st.success("✅ Sistema reiniciado")
+            st.rerun()
