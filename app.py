@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
-
 # ---------------------- CONFIGURACIÓN GENERAL ----------------------
 st.set_page_config(page_title="Imagen Digital Studio", page_icon="📸", layout="wide")
-
 # Colores personalizados
 colores = {
     "Servicios": "#8e44ad",
@@ -14,10 +12,8 @@ colores = {
     "Canjes de Puntos": "#f39c12",
     "Administración": "#e74c3c"
 }
-
 # ---------------------- ARCHIVO DE GUARDADO DE DATOS ----------------------
 ARCHIVO_DATOS = "datos_estudio.json"
-
 # Datos iniciales completos con TODO
 datos_iniciales = {
     "servicios": [
@@ -46,7 +42,6 @@ datos_iniciales = {
         "Usuario": {"clave": "1234", "rol": "consulta"}
     }
 }
-
 # ---------------------- FUNCIONES ----------------------
 def cargar_datos():
     try:
@@ -54,19 +49,15 @@ def cargar_datos():
             return json.load(f)
     except:
         return datos_iniciales
-
 def guardar_datos(datos):
     with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
         json.dump(datos, f, indent=4, ensure_ascii=False)
-
 datos = cargar_datos()
-
 # ---------------------- INICIO DE SESIÓN ----------------------
 if "sesion_iniciada" not in st.session_state:
     st.session_state.sesion_iniciada = False
     st.session_state.usuario_actual = ""
     st.session_state.rol_actual = ""
-
 if not st.session_state.sesion_iniciada:
     st.markdown("""
     <div style="text-align:center; padding:30px; background-color: #f8f9fa; border-radius:10px; margin: 20px;">
@@ -74,10 +65,8 @@ if not st.session_state.sesion_iniciada:
         <p style="color:#666;">Sistema de Gestión - Imagen Digital Studio</p>
     </div>
     """, unsafe_allow_html=True)
-   
     usuario = st.text_input("Usuario")
     clave = st.text_input("Contraseña", type="password")
-   
     if st.button("Ingresar", type="primary", use_container_width=True):
         if usuario in datos["usuarios"] and datos["usuarios"][usuario]["clave"] == clave:
             st.session_state.sesion_iniciada = True
@@ -86,9 +75,7 @@ if not st.session_state.sesion_iniciada:
             st.rerun()
         else:
             st.error("❌ Usuario o contraseña incorrectos")
-   
     st.stop()
-
 # ---------------------- CABECERA (SIN ENLACES ROTOS) ----------------------
 st.markdown("""
 <div style="text-align:center; margin-bottom:20px; padding:15px; background-color: #ffffff; border-radius:8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -103,13 +90,11 @@ st.markdown("""
     <hr>
 </div>
 """, unsafe_allow_html=True)
-
 # ---------------------- MENÚ ----------------------
 opcion = st.sidebar.selectbox(
     "📋 MENÚ PRINCIPAL",
     ["Servicios", "Clientes", "Ventas", "Canjes de Puntos"] + (["Administración"] if st.session_state.rol_actual == "administrador" else [])
 )
-
 if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
     # ---------------------- PANTALLA SERVICIOS ----------------------
 if opcion == "Servicios":
@@ -118,7 +103,6 @@ if opcion == "Servicios":
             <h1 style="color:white; margin:0; font-size:22px; text-align:center;">🛠️ NUESTROS SERVICIOS</h1>
         </div>
     """, unsafe_allow_html=True)
-
     # Solo Admin puede agregar
     if st.session_state.rol_actual == "administrador":
         with st.expander("➕ Agregar Nuevo Servicio"):
@@ -131,13 +115,11 @@ if opcion == "Servicios":
                     guardar_datos(datos)
                     st.success("✅ Guardado")
                     st.rerun()
-
     # Lista completa
     st.subheader("📋 Lista Completa")
     df_serv = pd.DataFrame(datos["servicios"])
     df_serv = df_serv.rename(columns={"nombre":"Servicio", "puntos":"Puntos", "activo":"Activo", "es_navidad":"Navidad"})
     st.dataframe(df_serv, use_container_width=True)
-
     # Acciones Admin
     if st.session_state.rol_actual == "administrador":
         st.subheader("⚙️ Acciones")
@@ -153,7 +135,6 @@ if opcion == "Servicios":
                             datos["servicios"].remove(s)
                         guardar_datos(datos)
                         st.rerun()
-
 # ---------------------- PANTALLA CLIENTES ----------------------
 elif opcion == "Clientes":
     st.markdown(f"""
@@ -161,7 +142,6 @@ elif opcion == "Clientes":
             <h1 style="color:white; margin:0; font-size:22px; text-align:center;">👥 GESTIÓN DE CLIENTES</h1>
         </div>
     """, unsafe_allow_html=True)
-
     # Crear cliente (solo Admin)
     if st.session_state.rol_actual == "administrador":
         with st.expander("➕ Nuevo Cliente"):
@@ -173,14 +153,12 @@ elif opcion == "Clientes":
                     guardar_datos(datos)
                     st.success("✅ Cliente creado")
                     st.rerun()
-
     # Lista completa
     st.subheader("📋 Lista de Clientes")
     lista_cli = []
     for nom, info in datos["clientes"].items():
         lista_cli.append({"Nombre": nom, "Puntos": info["puntos"], "Estado": "ACTIVO" if info["activo"] else "INACTIVO"})
     st.dataframe(pd.DataFrame(lista_cli), use_container_width=True)
-
     # Cambiar estado (solo Admin)
     if st.session_state.rol_actual == "administrador":
         st.subheader("🔄 Cambiar Estado")
@@ -197,7 +175,6 @@ elif opcion == "Ventas":
             <h1 style="color:white; margin:0; font-size:22px; text-align:center;">💳 HISTORIAL DE VENTAS</h1>
         </div>
     """, unsafe_allow_html=True)
-
     # Registrar Venta (solo Admin)
     if st.session_state.rol_actual == "administrador":
         with st.expander("➕ Registrar Nueva Venta"):
@@ -206,7 +183,6 @@ elif opcion == "Ventas":
             serv_activos = [s["nombre"] for s in datos["servicios"] if s["activo"]]
             serv_v = st.selectbox("Servicio", serv_activos)
             monto_v = st.number_input("Monto ₡", min_value=0.0)
-           
             if st.button("Guardar Venta"):
                 # Guardar venta
                 datos["ventas"].append([
@@ -218,14 +194,12 @@ elif opcion == "Ventas":
                 guardar_datos(datos)
                 st.success(f"✅ Venta registrada. +{puntos_ganar} puntos")
                 st.rerun()
-
     # Ver ventas
     if datos["ventas"]:
         df_ventas = pd.DataFrame(datos["ventas"], columns=["Cliente", "Servicio", "Fecha", "Monto"])
         st.dataframe(df_ventas, use_container_width=True)
         total = sum(float(v[3].replace("¢ ","").replace(",","")) for v in datos["ventas"])
         st.info(f"**TOTAL DEL MES: ₡ {total:,.2f}**")
-
         # Anular venta (solo Admin)
         if st.session_state.rol_actual == "administrador":
             fila = st.number_input("Número de fila a borrar", min_value=0, max_value=len(datos["ventas"])-1)
@@ -235,7 +209,6 @@ elif opcion == "Ventas":
                 st.rerun()
     else:
         st.info("Sin ventas registradas")
-
 # ---------------------- PANTALLA CANJES ----------------------
 elif opcion == "Canjes de Puntos":
     st.markdown(f"""
@@ -243,9 +216,7 @@ elif opcion == "Canjes de Puntos":
             <h1 style="color:white; margin:0; font-size:22px; text-align:center;">🎁 CANJES DE PUNTOS</h1>
         </div>
     """, unsafe_allow_html=True)
-
     st.markdown('<div style="background:#e8f5e9; padding:20px; border-radius:8px;">', unsafe_allow_html=True)
-
     # Consultar
     nombre_canje = st.text_input("Nombre del Cliente")
     if st.button("🔍 Consultar"):
@@ -253,12 +224,10 @@ elif opcion == "Canjes de Puntos":
             st.success(f"✅ Puntos: {datos['clientes'][nombre_canje]['puntos']}")
         else:
             st.error("❌ Cliente no válido")
-
     # Premios
     st.subheader("Premios Disponibles")
     premios = [f"🔸 {p} puntos: {d}" for p,d in datos["reglas_canjes"]]
     st.write("\n".join(premios))
-
     # Seleccionar y Canjear
     sel_premio = st.radio("Seleccione premio", premios) if premios else None
     if st.button("✅ Realizar Canje"):
@@ -276,7 +245,6 @@ elif opcion == "Canjes de Puntos":
                 st.rerun()
             else:
                 st.error("❌ Puntos insuficientes")
-
     st.markdown('</div>', unsafe_allow_html=True)
     st.session_state.sesion_iniciada = False
     st.rerun()
@@ -287,9 +255,7 @@ elif opcion == "Administración":
             <h1 style="color:white; margin:0; font-size:22px; text-align:center;">⚙️ PANEL DE ADMINISTRACIÓN</h1>
         </div>
     """, unsafe_allow_html=True)
-
     st.warning("⚠️ **Solo para personal autorizado** - Aquí puedes modificar todo el sistema")
-
     # Gestión de Usuarios
     st.subheader("👤 Gestionar Usuarios")
     df_usuarios = []
@@ -300,7 +266,6 @@ elif opcion == "Administración":
             "Clave": "••••••••"
         })
     st.dataframe(pd.DataFrame(df_usuarios), use_container_width=True)
-
     # Crear nuevo usuario
     with st.expander("➕ Crear Nuevo Usuario"):
         nuevo_user = st.text_input("Nombre de Usuario")
@@ -312,7 +277,6 @@ elif opcion == "Administración":
                 guardar_datos(datos)
                 st.success("✅ Usuario creado")
                 st.rerun()
-
     # Reglas de Canje
     st.subheader("🎁 Modificar Reglas de Canje")
     nueva_puntos = st.number_input("Puntos necesarios", min_value=10, step=10)
@@ -323,7 +287,6 @@ elif opcion == "Administración":
             guardar_datos(datos)
             st.success("✅ Regla agregada")
             st.rerun()
-
     # Resumen del sistema
     st.subheader("📊 Resumen General")
     col1, col2, col3 = st.columns(3)
@@ -333,7 +296,6 @@ elif opcion == "Administración":
         st.metric("Total Clientes", len(datos["clientes"]))
     with col3:
         st.metric("Total Ventas", len(datos["ventas"]))
-
     # Reiniciar sistema
     if st.button("🔄 Reiniciar Datos a Original", type="secondary"):
         if st.checkbox("Estoy seguro, borrar todo"):
